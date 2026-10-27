@@ -10,33 +10,88 @@
 
 ---
 
+<a id="toc"></a>
+
 ## 目录
 
-- [0. 怎么用这份文档](#0-怎么用这份文档)
-- [1. 一页纸全景](#1-一页纸全景)
-- [2. 前置知识](#2-前置知识)
-  - 2.1 Tool calling 的完整链路
-  - 2.2 Chat template
-  - 2.3 vLLM 的 tool parser
-  - 2.4 Qwen2.5-Coder 到底输出了什么，适配器做了什么
-  - 2.5 `strict: true` 与约束解码
-  - 2.6 ReAct vs Function Calling
-  - 2.7 多轮代码修复循环里的指标
-  - 2.8 基准：KodCode / EvalPlus / BFCL / τ-bench
-  - 2.9 RL：GRPO、LoRA、verl
-  - 2.10 统计：配对检验、多重比较、置信区间、κ、析因设计、后处理条件化
-- [3. 正文逐节精读](#3-正文逐节精读)
-- [4. 附录逐个精读](#4-附录逐个精读)
-- [5. 数字速查表](#5-数字速查表)
-- [6. 代码与数据地图](#6-代码与数据地图)
-- [7. 常见误读与正确说法](#7-常见误读与正确说法)
-- [8. 自测题（附答案）](#8-自测题附答案)
-- [9. 术语表](#9-术语表)
-- [10. 延伸阅读](#10-延伸阅读)
+- [0. 怎么用这份文档](#ch0)
+  - [0.1 建议学习路线（约 4 个半天）](#ch0-1)
+  - [0.2 读每个数字时问自己的四个问题](#ch0-2)
+  - [0.3 本文档的标记约定](#ch0-3)
+- [1. 一页纸全景](#ch1)
+  - [1.1 一句话主张](#ch1-1)
+  - [1.2 漏斗（全文的骨架）](#ch1-2)
+  - [1.3 四条证据线（对应 Introduction 的四个 bullet）](#ch1-3)
+  - [1.4 论文不说的话（背下来，被追问时最容易踩）](#ch1-4)
+- [2. 前置知识](#ch2)
+  - [2.1 Tool calling 的完整链路](#ch2-1)
+  - [2.2 Chat template](#ch2-2)
+  - [2.3 vLLM 的 tool parser](#ch2-3)
+  - [2.4 Qwen2.5-Coder 到底输出了什么，适配器做了什么](#ch2-4)
+  - [2.5 `strict: true` 与约束解码](#ch2-5)
+  - [2.6 ReAct vs Function Calling (FC)](#ch2-6)
+  - [2.7 多轮代码修复循环里的指标](#ch2-7)
+  - [2.8 基准](#ch2-8)
+  - [2.9 RL：GRPO、LoRA、verl](#ch2-9)
+  - [2.10 统计](#ch2-10)
+- [3. 正文逐节精读](#ch3)
+  - [3.0 标题与摘要](#ch3-1)
+  - [3.1 §1 Introduction](#ch3-2)
+  - [3.2 §2 Related Work](#ch3-3)
+  - [3.3 §3 Framework and Testable Signatures（理论核心，逐句理解）](#ch3-4)
+  - [3.4 §4 Measurement Setup（每个设计选择都有理由）](#ch3-5)
+  - [3.5 §5.1 External validity: BFCL and τ-bench](#ch3-6)
+  - [3.6 §5.2 Scale under mismatched and matched interfaces](#ch3-7)
+  - [3.7 §5.3 Llama: a constraint suppresses the wrong action](#ch3-8)
+  - [3.8 §5.4 Repair changes evaluation trajectories](#ch3-9)
+  - [3.9 §5.5 Parser repair restores RL experience; no held-out improvement detected（最重要的一节）](#ch3-10)
+  - [3.10 §6 Implications and Limitations](#ch3-11)
+  - [3.11 §7 Conclusion](#ch3-12)
+- [4. 附录逐个精读](#ch4)
+  - [4.1 附录 A：Data Errata（"披露而非吸收"）](#ch4-1)
+  - [4.2 附录 B：Reproducibility](#ch4-2)
+  - [4.3 附录 C：Prompts and tool schemas（英文渲染）](#ch4-3)
+  - [4.4 附录 D：Serving and training configuration](#ch4-4)
+  - [4.5 附录 E：Arm inventory（50 个臂）](#ch4-5)
+  - [4.6 附录 F：Human validation of the intent criterion（审稿人最爱追问的部分）](#ch4-6)
+  - [4.7 附录 G：Supplementary results（最长的附录，逐小节）](#ch4-7)
+  - [4.8 附录 H：Limitations, in full（17 条，"按怀疑型读者应该应用的顺序"）](#ch4-8)
+  - [4.9 附录 I：Statistical estimands and retrospective test family](#ch4-9)
+- [5. 数字速查表](#ch5)
+  - [5.1 BFCL v4（Qwen2.5-Coder-7B-Instruct，Gorilla `6ea5797`）](#ch5-1)
+  - [5.2 τ-bench retail（115 任务，本地 Llama-3.1-8B 用户模拟器）](#ch5-2)
+  - [5.3 规模](#ch5-3)
+  - [5.4 失败层（no envelope / malformed / strictness / parser loss）](#ch5-4)
+  - [5.5 Llama-3.1-8B](#ch5-5)
+  - [5.6 Qwen2.5-Coder-7B 评测修复](#ch5-6)
+  - [5.7 正式 7B RL（P3）](#ch5-7)
+  - [5.8 Native FC 评测（post-hoc）](#ch5-8)
+  - [5.9 历史 1.5B](#ch5-9)
+  - [5.10 人工验证](#ch5-10)
+  - [5.11 杂项](#ch5-11)
+- [6. 代码与数据地图](#ch6)
+  - [6.1 服务与探针](#ch6-1)
+  - [6.2 分析脚本（`analysis/`）](#ch6-2)
+  - [6.3 训练](#ch6-3)
+  - [6.4 图](#ch6-4)
+  - [6.5 论文源码](#ch6-5)
+- [7. 常见误读与正确说法](#ch7)
+- [8. 自测题（附答案）](#ch8)
+  - [⭐ 基础](#ch8-1)
+  - [⭐⭐ 理解](#ch8-2)
+  - [⭐⭐⭐ 审稿人级追问](#ch8-3)
+- [9. 术语表](#ch9)
+- [10. 延伸阅读](#ch10)
 
 ---
 
+<a id="ch0"></a>
+
 ## 0. 怎么用这份文档
+
+<sub>[↑ 回到目录](#toc) ｜ [下一章：1. 一页纸全景 →](#ch1)</sub>
+
+<a id="ch0-1"></a>
 
 ### 0.1 建议学习路线（约 4 个半天）
 
@@ -47,6 +102,8 @@
 | 第 3 段 | §4 附录 + §5 数字表 | 能回答审稿人式的追问（"你的分类器准吗？""为什么不显著还要写？""LoRA 和全参能比吗？"） |
 | 第 4 段 | §7 误读表 + §8 自测题 | 合上文档能把自测题答出 80% 以上 |
 
+<a id="ch0-2"></a>
+
 ### 0.2 读每个数字时问自己的四个问题
 
 这篇论文最大的特点是**每个数字都有严格的口径**。养成习惯，每看到一个数先问：
@@ -55,6 +112,8 @@
 2. **它测的是漏斗的哪一层？** emission（模型吐了什么字节）/ parse（解析器接不接受）/ execution（工具有没有真跑）/ observation（结果有没有回到对话里）/ outcome（任务最终成没成）。
 3. **它是机制计数（mechanism count）还是任务结果（task outcome）？** 论文反复强调：机制计数大幅变化 ≠ 任务结果显著变化。
 4. **它能推出什么、不能推出什么？** 论文几乎每个结果后面都跟一句"This does not establish …"。这些否定句是论文的灵魂，学的时候要和正面结论一样重视。
+
+<a id="ch0-3"></a>
 
 ### 0.3 本文档的标记约定
 
@@ -65,7 +124,13 @@
 
 ---
 
+<a id="ch1"></a>
+
 ## 1. 一页纸全景
+
+<sub>[↑ 回到目录](#toc) ｜ [← 上一章：0. 怎么用这份文档](#ch0) ｜ [下一章：2. 前置知识 →](#ch2)</sub>
+
+<a id="ch1-1"></a>
 
 ### 1.1 一句话主张
 
@@ -73,6 +138,8 @@
 > 当模型吐出的字节和接口约定的格式对不上时，服务端会返回 **HTTP 200 + 空的 `tool_calls`**——
 > 这和"模型主动不调用工具"在日志上**一模一样**。于是评测分数、协议对比、RL 训练经验都被悄悄扭曲了。
 > 论文把这种现象叫 **interface-induced trajectory censoring（接口诱导的轨迹删失）**。
+
+<a id="ch1-2"></a>
 
 ### 1.2 漏斗（全文的骨架）
 
@@ -104,6 +171,8 @@
 - **masking（遮蔽）**：模型已经吐出了动作，接口把它抹掉了。→ 改 parser 就能"找回"，不需要重新生成。
 - **constructive suppression（建设性抑制）**：比如 `strict: true` 约束解码，在**生成时**就不允许非法动作出现。→ 这是对生成的干预，改变的是 Y 本身，**不是**"找回被删掉的动作"的证据。
 
+<a id="ch1-3"></a>
+
 ### 1.3 四条证据线（对应 Introduction 的四个 bullet）
 
 | # | 证据线 | 核心数字 | 正文位置 |
@@ -112,6 +181,8 @@
 | 2 | **规模阶梯**：同一错配接口下，越大的 Coder 吐出越多"看起来像调用"的字节，但服务端始终 0 | Coder tight：0, 4, 21, 36, 80；Qwen3 matched 静默数：1, 1, 2, 0 | §5.2，表 3、表 4 |
 | 3 | **Llama 反例**：接口不只会"吃掉"动作，也能"挡住"错误动作 | `strict:true` 让错调用 22→0，final pass 44→61 | §5.3，表 5 |
 | 4 | **RL 控制实验**：只换 verl 的 parser 注册 | 执行次数 10→16,844；但 held-out 成功率无检测到的提升（427 vs 430，*p*=0.25；native FC 248 vs 248，*p*=1） | §5.4–5.5，表 6、表 7 |
+
+<a id="ch1-4"></a>
 
 ### 1.4 论文**不说**的话（背下来，被追问时最容易踩）
 
@@ -125,7 +196,13 @@
 
 ---
 
+<a id="ch2"></a>
+
 ## 2. 前置知识
+
+<sub>[↑ 回到目录](#toc) ｜ [← 上一章：1. 一页纸全景](#ch1) ｜ [下一章：3. 正文逐节精读 →](#ch3)</sub>
+
+<a id="ch2-1"></a>
 
 ### 2.1 Tool calling 的完整链路
 
@@ -154,6 +231,8 @@
 
 **核心洞察**：第 4 步失败时的可观测现象 = "模型选择不调用工具"。两者在 `tool_calls` 字段上不可区分。这就是论文第一段说的 "the same observable as a model declining to act: HTTP 200 and an empty `tool_calls` array"。
 
+<a id="ch2-2"></a>
+
 ### 2.2 Chat template
 
 - **是什么**：一段 Jinja2 模板，通常放在模型仓库的 `tokenizer_config.json` 里（字段 `chat_template`），也可以用 vLLM 的 `--chat-template` 覆盖。
@@ -164,6 +243,8 @@
 - **陷阱 1：模板继承（论文的 "template check false-positives"）**。Qwen2.5-Coder 的 template 继承自 Qwen2.5 通用版，里面**写着**支持 tools、写着用 `<tool_call>` 包装。所以"检查模板支不支持 tools"这一步会给出"支持"的结论——这是**假阳性**：模板说支持，但 Coder 这个 checkpoint 实际上并不按这个格式输出。见附录 G 的 taxonomy 表："× template check **false-positives**"。
 - **陷阱 2：仓库修订依赖**（局限 16）。template 随 `tokenizer_config.json` 发布，发布者可以在不改模型权重的情况下改模板。所以论文强调要 pin 模型 revision 和模板哈希。
 - **DeepSeek-Coder 的情况**：它的 template **根本不注入 tools**，模型连有什么工具都不知道。这是 template 层的失败，而且"可以事先检查出来"（taxonomy 表里唯一的 ✓）。
+
+<a id="ch2-3"></a>
 
 ### 2.3 vLLM 的 tool parser
 
@@ -188,6 +269,8 @@
   - `mistral`：要求 `tool_call_id` 恰好 9 个字符；模型重复输出 `[TOOL_CALLS]` token 会导致 HTTP 400。官方推荐的 parallel template 反而把错误率从 2% 抬到 42%。
 - **verl 有自己的 parser**（RL 部分的关键）：verl 的 AgentLoop 在 `verl/experimental/agent_loop/tool_parser.py` 里有自己的 `ToolParser` 注册表（hermes 那个是从 vLLM v0.9.1 移植的），由配置 `multi_turn.format` 选择。**给 vLLM 服务端装 parser 插件对训练链路无效**。我们必须在 verl 内部注册 `qwen2_5_coder` parser（代码：仓库根目录 `qwen_tools_parser.py`，接受 `<tools>` 标签、```json 代码块、裸 JSON 三种格式）。
 
+<a id="ch2-4"></a>
+
 ### 2.4 Qwen2.5-Coder 到底输出了什么，适配器做了什么
 
 - **事实**：Qwen2.5-Coder 在 Hermes 配置下输出的是**裸 JSON** 或 **```json 代码块**，不带 `<tool_call>` 包装。
@@ -210,6 +293,8 @@
   - 两个都换 → 196/200。
   这叫**强互补（strong complementarity）**：每个组件都按自己的契约正常工作，但两个契约不一致。
 
+<a id="ch2-5"></a>
+
 ### 2.5 `strict: true` 与约束解码
 
 - **【我的解释】** 在 tool schema 里加 `"strict": true`（以及 `additionalProperties: false`），并开启服务端的 strict tool calling，服务端会用**结构化输出 / 引导解码（guided decoding）**：生成每个 token 时屏蔽掉会违反 schema 的 token。于是模型**不可能**生成一个名字不在工具列表里的调用、或者参数名不对的调用。
@@ -217,6 +302,8 @@
 - **为什么这是"constructive suppression"而不是"masking 修复"**：它改变的是**生成**（turn-1 输出变了：turn-1 pass 33→46），不是对已有字节重新解析。论文 §3 的第一个诊断签名专门讲了这个区别。
 - **verl 0.9.0 的 rollout 路径不暴露约束解码**（它唯一的 `strict` key 属于 profiler），所以 RL 实验没法用这招（附录 D (iv)）。
 - **相关文献**：Tam et al. 2024 "Speak Freely" 发现格式约束会伤害推理；我们的 Llama 是一个互补的案例——约束移除了角色混淆、改善了执行。
+
+<a id="ch2-6"></a>
 
 ### 2.6 ReAct vs Function Calling (FC)
 
@@ -226,6 +313,8 @@
   - `FC_OPTIONAL`："You **may** call run_tests…"
   - `FC_MANDATORY`："You **must** first call run_tests… do not answer directly."
 - **协议差距（protocol gap）**：ReAct 和 FC 的 final pass 差。论文在 Llama 上把 terse-FC→ReAct 的 +31 分解成 interface repair +12（49→61）和 protocol +19（61→80）。注意：这两个分解都是**描述性的**，都没过 Bonferroni。
+
+<a id="ch2-7"></a>
 
 ### 2.7 多轮代码修复循环里的指标
 
@@ -242,6 +331,8 @@
 
 **为什么 FC+Hermes 的 turn-1 = final = 53、rescue = 0**：工具通道断了，模型永远拿不到测试反馈，只能一次性交卷。
 **为什么 Hermes 臂的平均 tested steps 是 0.96 而不是 0**：KodCode 探针的评测器在 FC 没解析出调用时，仍会从 `content` 里抽代码做最终评分；100 个首轮输出中 4 个抽不出代码，所以 96/100。
+
+<a id="ch2-8"></a>
 
 ### 2.8 基准
 
@@ -268,6 +359,8 @@
 - 打分看**最终环境状态**是否和目标一致。
 - 我们用全部 115 个 retail 任务；**用户模拟器是本地 Llama-3.1-8B，不是原 harness 的 gpt-4o**。所以绝对分数**不能和排行榜比**，只声明配对臂差异。
 - 意义：把 envelope 层机制扩展到**非代码、有状态**的环境。但规模和 RL 结论仍是代码任务专属。
+
+<a id="ch2-9"></a>
 
 ### 2.9 RL：GRPO、LoRA、verl
 
@@ -302,6 +395,8 @@
 - 三条 reward hacking 路径被构造性地堵上：没有任何测试执行 → 0 分（而不是 1）；超时 → 0；题目没有测试字符串 → 0。
 - **历史 verifier 的两个缝隙**：(i) 在合并的 stdout/stderr 上用未锚定的 `(\d+) passed` 取第一个匹配 → 模型可以 `print("5 passed")` 伪造；(ii) `skipped`/`xfail` 不计入分母。审计：5 个保留了生成代码的训练日志里 0 次出现这类签名，`critic/rewards/mean` 在 0.46–0.73 间振荡、没有"发现漏洞"时那种阶跃。**正式 7B 实验前修好了**：正则锚定到 pytest 的 summary 行，分母包含 skipped/xfailed/xpassed，每条 rollout 全文保留 + SHA-256。两臂用同一个修好的 verifier → 它不能解释两臂差异。
 - held-out 通过率**不用** reward verifier，用 EvalPlus `mode="script"`，要求 exit code 0 且 `status=="ok"`。
+
+<a id="ch2-10"></a>
 
 ### 2.10 统计
 
@@ -393,7 +488,13 @@ BFCL 2×2 表（单元格 = 首请求解析数 / 200）：
 
 ---
 
+<a id="ch3"></a>
+
 ## 3. 正文逐节精读
+
+<sub>[↑ 回到目录](#toc) ｜ [← 上一章：2. 前置知识](#ch2) ｜ [下一章：4. 附录逐个精读 →](#ch4)</sub>
+
+<a id="ch3-1"></a>
 
 ### 3.0 标题与摘要
 
@@ -415,6 +516,8 @@ BFCL 2×2 表（单元格 = 首请求解析数 / 200）：
 8. *However, neither a shared programmatic-feedback evaluation nor a post-hoc common native function-calling evaluation detects a held-out success gain from repair; rescue counts do not increase.* → 关键的零结果。"detects" 是刻意的用词：未检测到 ≠ 不存在。
 9. *Interface repair thus restores tool-mediated experience without a detected performance gain in this setting.* → 总结，"in this setting" 限定范围。
 10. *These findings show that tool-use measurements depend on the model–interface configuration and motivate layer-wise observability and conformance checks before attributing evaluation or training outcomes to the model alone.* → 实践建议。
+
+<a id="ch3-2"></a>
 
 ### 3.1 §1 Introduction
 
@@ -441,6 +544,8 @@ BFCL 2×2 表（单元格 = 首请求解析数 / 200）：
 - 这句话是全文最值得背的理论表述：接口同时是(1)测量仪器的一部分、(2)agent 实际动作空间的一部分。
 - 所以："tool-use results require layer-wise observability and a conformance check before model or protocol attribution."
 
+<a id="ch3-3"></a>
+
 ### 3.2 §2 Related Work
 
 | 引用 | 它是什么 | 论文怎么定位自己 |
@@ -453,6 +558,8 @@ BFCL 2×2 表（单元格 = 首请求解析数 / 200）：
 | BFCL、τ-bench、ToolLLM、API-Bank | 工具基准 | 评测背景 |
 | verl (HybridFlow)、GRPO (DeepSeekMath)、LoRA | 训练栈 | — |
 | Tam 2024 (Speak Freely) | 约束生成会伤害推理 | 我们的 Llama 是**互补**案例：约束移除角色混淆、改善执行 |
+
+<a id="ch3-4"></a>
 
 ### 3.3 §3 Framework and Testable Signatures（**理论核心，逐句理解**）
 
@@ -485,6 +592,8 @@ BFCL 2×2 表（单元格 = 首请求解析数 / 200）：
 **签名 3：在 RL 中，parser 在策略梯度估计器看到经验**之前**就改变了采样经验分布。**
 - 恢复动作和观测 = 建立了对工具介导经验的**接触（access）**，不是测出了**梯度贡献**或**最终学习**。
 - 正式 7B 控制**分开检验两个主张**：事件计数识别 experience access；held-out checkpoints 检验这种 access 是否改变行为。
+
+<a id="ch3-5"></a>
 
 ### 3.4 §4 Measurement Setup（每个设计选择都有理由）
 
@@ -535,6 +644,8 @@ def is_tight_call(raw):
 
 **两个缺陷题的处理**（见 2.8 EvalPlus）。
 
+<a id="ch3-6"></a>
+
 ### 3.5 §5.1 External validity: BFCL and τ-bench
 
 **设置**：Qwen2.5-Coder-7B-Instruct，两个外部基准都用它；BFCL 上固定权重、case、解码、seed、执行器和 scorer。
@@ -578,6 +689,8 @@ def is_tight_call(raw):
 
 【我的解释】为什么 documented 臂 τ-bench 0 次执行也能解出 7 个？可能的原因是：有些零售任务的目标状态就是"数据库不变"（比如该拒绝的请求），模型只靠对话也能"成功"。论文没有分析这 7 个任务，这里只是帮助理解的猜测。
 
+<a id="ch3-7"></a>
+
 ### 3.6 §5.2 Scale under mismatched and matched interfaces
 
 **Coder ladder（表 3 上半）**：documented Hermes 接口下，服务端在 5 个规模上都报告 **0** 调用；tight 分类的 emission 单调上升 **0 → 4 → 21 → 36 → 80**（/100）。
@@ -617,6 +730,8 @@ def is_tight_call(raw):
 
 【我的解释】Instruct 控制的价值：它排除了"是不是 Qwen2.5 这个 template/parser 组合本来就坏了"——同一套接口下，Instruct 能被解析（越大越多），Coder 一个都不行。问题在 Coder checkpoint 的输出习惯。
 
+<a id="ch3-8"></a>
+
 ### 3.7 §5.3 Llama: a constraint suppresses the wrong action
 
 **现象**：Llama-3.1-8B 在 23/100 题上调用**题目要求实现的函数**而不是 `run_tests`（例子：`can_form_word`、`check_password_strength`、`floyd_warshall`）。这是**角色混淆（role confusion）**——把"要写的函数"当成"可调的工具"。
@@ -651,6 +766,8 @@ def is_tight_call(raw):
 
 【我的解释】这一节为什么重要：它防止读者把论文理解成"接口总是坏事、总是吃掉好动作"。Llama 展示了相反的方向——接口（strict 约束）**阻止**了错误动作到达环境。所以论文的主张是"接口是动作空间的一部分"，而不是"接口有害"。
 
+<a id="ch3-9"></a>
+
 ### 3.8 §5.4 Repair changes evaluation trajectories
 
 **表 6（repair_main）**：Qwen2.5-Coder-7B，只换服务适配器。
@@ -667,6 +784,8 @@ def is_tight_call(raw):
 - "Repair restores the mechanism; we do not claim an evaluation outcome effect."
 
 【我的解释】这一节和 RL 那一节是同一个故事的两次讲述：**机制恢复是确定性的、巨大的；结果变化是小的、不显著的**。
+
+<a id="ch3-10"></a>
 
 ### 3.9 §5.5 Parser repair restores RL experience; no held-out improvement detected（**最重要的一节**）
 
@@ -720,6 +839,8 @@ def is_tight_call(raw):
 2. **事件总数不同**（broken 19,203 vs repaired 33,367 个生成事件）是因为修复改变了轨迹：调用执行后对话轮次更多，就有更多机会再发调用。所以每臂内的比率**只用来描述该臂的漏斗**，因果归因用的是**单一注册 parser 干预**，不是原始分母相等。
 - 历史 ReAct 臂（23,676 次执行，rescue 平坦）方向一致，但只是**支持性证据**（它同时改了协议和接口）。
 
+<a id="ch3-11"></a>
+
 ### 3.10 §6 Implications and Limitations
 
 **Measure the funnel（实践建议）**：报告应包括：
@@ -758,6 +879,8 @@ def is_tight_call(raw):
 - 非代码的规模 ladder → 分离 envelope 机制和代码形状 payload。
 - 第二个服务栈（如 SGLang）→ 识别哪些发现是 vLLM 特有的。
 
+<a id="ch3-12"></a>
+
 ### 3.11 §7 Conclusion
 
 三句话：
@@ -768,9 +891,15 @@ def is_tight_call(raw):
 
 ---
 
+<a id="ch4"></a>
+
 ## 4. 附录逐个精读
 
+<sub>[↑ 回到目录](#toc) ｜ [← 上一章：3. 正文逐节精读](#ch3) ｜ [下一章：5. 数字速查表 →](#ch5)</sub>
+
 附录顺序（`main.tex` 里 `\input` 的顺序）：A Errata → B Reproducibility → C Prompts（英文渲染）→ D Config → E Arm inventory → F Human validation → G Supplementary results → H Limitations in full → I Statistics。
+
+<a id="ch4-1"></a>
 
 ### 4.1 附录 A：Data Errata（"披露而非吸收"）
 
@@ -811,6 +940,8 @@ def is_tight_call(raw):
 
 **学习要点**：这一节体现的研究规范是"**每个错误都被枚举，没有一个被悄悄吸收进报告的数字**"（局限 17 原话："None is silently absorbed into a reported number"）。如果被问"你们做过哪些纠错"，这一节就是答案。
 
+<a id="ch4-2"></a>
+
 ### 4.2 附录 B：Reproducibility
 
 - 补充包包含：精简的 Llama outcomes、**11,952** 条精简的 7B 评测记录、紧凑事件（包括被排除的段）、lineage 元数据、验证脚本；还有一个小的原始内容机制档案：BFCL 析因的 800 个首响应、100 个 documented + 100 个 repaired 单轮 BFCL 记录（含请求 schema 和官方打分输入）、全部 230 条 τ-bench 任务轨迹（115×2）、每臂 10 条确定性选出的 step-1 RL 轨迹。
@@ -835,6 +966,8 @@ def is_tight_call(raw):
 - 仅完整档案可跑：`analysis/p3_final_evidence.py`、`analysis/intent.py`、`runs/final/final_table.py`、checkpoint 审计、历史图重绘。
 - native FC：`native_fc/outcomes.json`（**1,626** 条 = 542×3）、`native_fc/statistics.json`、`analysis/native_fc_results.py --outcomes …`。CPU 上复算配对对比和超时清单，**不重新执行**生成的程序。
 
+<a id="ch4-3"></a>
+
 ### 4.3 附录 C：Prompts and tool schemas（英文渲染）
 
 原始 prompt 在 `paper/sections/C_prompts.tex`（中文版），这里的英文渲染"provided only for readers"。
@@ -851,6 +984,8 @@ def is_tight_call(raw):
   - BFCL：JSON-call 指示器 = 内嵌可解码 JSON 对象、命名了请求中提供的工具、参数是对象（包括 JSON 字符串编码的参数）。format-marker 和 JSON-marker 是独立的更宽检查，**互相重叠，不能相加**。
   - τ-bench：通用的命名调用模式或 Hermes tool-call marker，出现在没有结构化 tool calls 的 assistant 消息里。**不验证**是否属于提供的工具集，**不保证**语法有效。
   - KodCode 的标注精度**不假设**能迁移到两个外部基准。
+
+<a id="ch4-4"></a>
 
 ### 4.4 附录 D：Serving and training configuration
 
@@ -895,6 +1030,8 @@ def is_tight_call(raw):
 - (iii) role-disambiguation few-shot 让情况更糟（52→64 可恢复，15→13 final，正确命名仍 0）——§pressure 模式的第三个独立实例。
 - (iv) verl 0.9.0 的 vLLM rollout 路径不暴露约束解码。"This is a limitation of the tested rollout path, not an argument against constrained decoding."
 
+<a id="ch4-5"></a>
+
 ### 4.5 附录 E：Arm inventory（50 个臂）
 
 - 从轨迹文件自己的 provenance 生成，不是手抄。
@@ -902,6 +1039,8 @@ def is_tight_call(raw):
 - `---` 表示那一代 schema 没有这个字段（披露而非回填）。
 - `strength` 列是**记录的 CLI 选择器**，不一定是生效的 prompt：`a14` 和 `roleprobe` 指定了 `sys_file`，探针在选完内置 prompt 后加载它，覆盖了 `strength=optional`。原始 `sys_fc_mandatory.txt` 本地没找到，a14 的确切 prompt 字节无法独立验证。【学习要点：**配置日志 ≠ 生效配置**。】
 - 不列入：`v8_Llama8B_recheck`（23 题定向复跑）和 8 个 n=3 的 `*smoke*` 文件。
+
+<a id="ch4-6"></a>
 
 ### 4.6 附录 F：Human validation of the intent criterion（**审稿人最爱追问的部分**）
 
@@ -950,6 +1089,8 @@ def is_tight_call(raw):
 **精度估计的历史轨迹**（论文主动报告轨迹而不只报终点）：**0.950**（第一轮单边裁决，被选择规则抬高）→ **0.975**（只用 A2 的标签，依赖单个评分者）→ **0.900**（对裁决金标准，唯一由事先固定规则构建的）。
 
 **测量本身的边界**：每题最多存 4000 字符；98 个样本里 10 个触顶，其中一个灰区题是被截断的调用。全部 10 个触顶都在 32B 子集（0/6, 0/13, 0/15, 0/24, 10/40）。→ 截断造成假阴性的向下压力；但分类器也有假阳性 → 原始计数的净偏差未知 → 同时报告未修正计数和依赖假设的敏感性估计，**不称其为严格下界**。
+
+<a id="ch4-7"></a>
 
 ### 4.7 附录 G：Supplementary results（最长的附录，逐小节）
 
@@ -1236,6 +1377,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 - 9 个探索性检验（3 个权重对比 × final/initiation/rescue），连调整前都不显著；独立于 27-test 族；36 个合并修正也不会让任何新结果显著。区间是逐点的。确定性的 6 题和 24 题工程 pilot 与全集重叠，不算额外观察或种子。
 - 公开仓库提供配置、1,626 条题目记录、`native_fc_results.py`（`--outcomes` 模式 CPU 复算；`--archive` 模式检查原始哈希、匹配输入、加载的 adapter 身份、执行到观测的链接）。精简记录不含生成代码或完整对话。
 
+<a id="ch4-8"></a>
+
 ### 4.8 附录 H：Limitations, in full（17 条，"按怀疑型读者应该应用的顺序"）
 
 **A. 证据范围**
@@ -1262,6 +1405,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 17. **仪器勘误，披露而非吸收**（见 4.1）。
 
 **What would change our conclusions (restated)**：更多种子或更长预算；第二个家族的 ladder（带工作的执行器）；同样 ladder 在非代码任务上（五个 Coder checkpoint 跑 τ-bench retail，documented 配置——emitted 列随规模上升而 parsed 列保持 0 → 接口的属性；否则 → 代码形状 payload 的属性；小规模需要 rescue 臂，理由同 Granite）；更多标准基准（已做 BFCL v4 和 τ-bench；大 schema 或依赖参数级匹配的套件未测）。
+
+<a id="ch4-9"></a>
 
 ### 4.9 附录 I：Statistical estimands and retrospective test family
 
@@ -1317,9 +1462,15 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 
 ---
 
+<a id="ch5"></a>
+
 ## 5. 数字速查表
 
+<sub>[↑ 回到目录](#toc) ｜ [← 上一章：4. 附录逐个精读](#ch4) ｜ [下一章：6. 代码与数据地图 →](#ch6)</sub>
+
 > 按主题分组。"层"一列：E=emission，P=parse，X=execution，O=observation，R=result/outcome。
+
+<a id="ch5-1"></a>
 
 ### 5.1 BFCL v4（Qwen2.5-Coder-7B-Instruct，Gorilla `6ea5797`）
 
@@ -1339,6 +1490,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 | 197 vs 196；99 vs 98 | repaired 臂两次运行的 first parsed / executed（±1） | P/X | G.4 |
 | 480 | hermes 臂请求数（两次一样） | — | G.4 |
 
+<a id="ch5-2"></a>
+
 ### 5.2 τ-bench retail（115 任务，本地 Llama-3.1-8B 用户模拟器）
 
 | 数字 | 含义 | 层 |
@@ -1349,6 +1502,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 | 789/789 | 归入 missing-envelope（都没到 payload 验证） | P |
 | 0 → 103 | 至少执行过一次的任务 | X |
 | 7 → 10 | solved，3/0，*p*=0.25，不声明 | R |
+
+<a id="ch5-3"></a>
 
 ### 5.3 规模
 
@@ -1370,6 +1525,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 | 4,254 | 去重首轮数，parser loss = 0 |
 | 84 vs 1 | 同一个 adapter 在 7B vs 3B 的恢复数 |
 
+<a id="ch5-4"></a>
+
 ### 5.4 失败层（no envelope / malformed / strictness / parser loss）
 
 | Arm | 数字 |
@@ -1380,6 +1537,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 | Instruct 7B | 3 / 33 / 1 / 0 |
 | Instruct 14B | 13 / 6 / 4 / 0 |
 | Instruct 32B | 1 / 9 / 2 / 0 |
+
+<a id="ch5-5"></a>
 
 ### 5.5 Llama-3.1-8B
 
@@ -1406,6 +1565,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 | 19/16/29 | ReAct 三个 seed 的 rescue |
 | +6 | clean 臂最坏情况的协议差 |
 
+<a id="ch5-6"></a>
+
 ### 5.6 Qwen2.5-Coder-7B 评测修复
 
 | 数字 | 含义 |
@@ -1422,6 +1583,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 | 83 题 63 vs 56，+8.4 [−0.5, 17.4]，*p*=0.118 | both-parsed 残差 |
 | 42.5% vs 24.3% | 给定反馈的修复成功率（后处理，描述性） |
 | 0.96 / 1.82 / 1.92 | mean tested steps：hermes / adapter / ReAct |
+
+<a id="ch5-7"></a>
 
 ### 5.7 正式 7B RL（P3）
 
@@ -1448,6 +1611,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 | 0.150–0.469 / 0.168–0.435 | 平均训练奖励范围 |
 | 56.3%（ℓ2 0.0787）/ 56.1%（ℓ2 0.1222） | LoRA 值改变比例（broken 120→150 / repaired 90→150） |
 
+<a id="ch5-8"></a>
+
 ### 5.8 Native FC 评测（post-hoc）
 
 | 数字 | 含义 |
@@ -1467,6 +1632,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 | 9 | 探索性检验数（另一个族） |
 | 8,192 token 上下文，1,200 **字符**观测上限，30s 超时 | 配置 |
 
+<a id="ch5-9"></a>
+
 ### 5.9 历史 1.5B
 
 | 数字 | 含义 |
@@ -1483,6 +1650,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 | 52 → 64，0 命名，15 → 13 | verl parser 恢复 / role-disambig / 正确命名 / final |
 | 36 / 16 | 任务函数参数 / 代码在别处 |
 | 31 → 15，~0 → 46 | 1.5B optional→mandatory：final / 无法解析 |
+
+<a id="ch5-10"></a>
 
 ### 5.10 人工验证
 
@@ -1502,6 +1671,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 | 0.950 → 0.975 → 0.900 | 精度估计历史 |
 | 10/98 | 样本中 4,000 字符触顶数（全在 32B） |
 | 5,000 次，seed 7 | bootstrap |
+
+<a id="ch5-11"></a>
 
 ### 5.11 杂项
 
@@ -1526,9 +1697,15 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 
 ---
 
+<a id="ch6"></a>
+
 ## 6. 代码与数据地图
 
+<sub>[↑ 回到目录](#toc) ｜ [← 上一章：5. 数字速查表](#ch5) ｜ [下一章：7. 常见误读与正确说法 →](#ch7)</sub>
+
 > 都是仓库 `code_agent/` 下的相对路径。✅ = 在公开仓库里；📦 = 只在补充包/完整档案里。
+
+<a id="ch6-1"></a>
 
 ### 6.1 服务与探针
 
@@ -1541,6 +1718,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 | `runs/final/ERRATA.md` ✅ | 附录 A 的来源 |
 | `runs/final/final_table.py` 📦 | 主表生成（需完整档案） |
 | `decontaminate.py`、`clean_ids.json` ✅ | 去污染 |
+
+<a id="ch6-2"></a>
 
 ### 6.2 分析脚本（`analysis/`）
 
@@ -1559,6 +1738,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 | `funnel.py`、`funnel_data.json` | 图 1 漏斗 |
 | `MECHANISM_EVIDENCE.md`、`VERIFICATION_SCOPE.md` | 机制证据和验证范围说明 |
 
+<a id="ch6-3"></a>
+
 ### 6.3 训练
 
 | 文件 | 作用 |
@@ -1574,9 +1755,13 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 | `p3/FINAL_RESULT_20260918.md`、`p3/FINAL_EVIDENCE_AUDIT_20260919.md`、`p3/PREREG_AMENDMENT_20260903.md` | P3 结果、审计、预注册修正 |
 | `submission_packages/native_fc/{configurations,outcomes,statistics}.json` ✅ | native FC 配置与 1,626 条记录 |
 
+<a id="ch6-4"></a>
+
 ### 6.4 图
 
 `figures/make_figs.py` 生成：`fig0_funnel`（图 1 漏斗）、`fig1_intent_parse_gap`（规模）、`fig2_family_taxonomy`（四家族）、`fig3_training_causal`（历史 1.5B 诊断）、`fig4_training_curves`（历史曲线）。
+
+<a id="ch6-5"></a>
 
 ### 6.5 论文源码
 
@@ -1586,7 +1771,11 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 
 ---
 
+<a id="ch7"></a>
+
 ## 7. 常见误读与正确说法
+
+<sub>[↑ 回到目录](#toc) ｜ [← 上一章：6. 代码与数据地图](#ch6) ｜ [下一章：8. 自测题（附答案） →](#ch8)</sub>
 
 | # | ❌ 误读 | ✅ 正确说法 | 为什么 |
 |---|---|---|---|
@@ -1620,9 +1809,15 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 
 ---
 
+<a id="ch8"></a>
+
 ## 8. 自测题（附答案）
 
+<sub>[↑ 回到目录](#toc) ｜ [← 上一章：7. 常见误读与正确说法](#ch7) ｜ [下一章：9. 术语表 →](#ch9)</sub>
+
 > 建议先遮住答案作答。分三级：⭐ 基础、⭐⭐ 理解、⭐⭐⭐ 审稿人级追问。
+
+<a id="ch8-1"></a>
 
 ### ⭐ 基础
 
@@ -1655,6 +1850,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 
 **Q10. Bonferroni 阈值是多少，怎么来的？**
 <details><summary>答案</summary>0.05/27 ≈ 0.00185；27 = 5 个 Llama 控制对比 × 3 个指标（15）+ 12 个其他对比；回顾性、非预注册。</details>
+
+<a id="ch8-2"></a>
 
 ### ⭐⭐ 理解
 
@@ -1693,6 +1890,8 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 
 **Q22. Qwen2.5-Instruct 控制排除了什么解释？**
 <details><summary>答案</summary>排除了"同一 template/parser 组合本身就坏了"：同样接口下 Instruct 能被解析（1→88）且 rescue 随之上升（0→23），Coder 始终 0。差异在 checkpoint 特定的后训练，不在参数量或共享家族/模板；但不能认定工具格式训练是唯一原因。</details>
+
+<a id="ch8-3"></a>
 
 ### ⭐⭐⭐ 审稿人级追问
 
@@ -1746,7 +1945,11 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 
 ---
 
+<a id="ch9"></a>
+
 ## 9. 术语表
+
+<sub>[↑ 回到目录](#toc) ｜ [← 上一章：8. 自测题（附答案）](#ch8) ｜ [下一章：10. 延伸阅读 →](#ch10)</sub>
 
 | 英文 | 中文 | 一句话解释 |
 |---|---|---|
@@ -1791,7 +1994,11 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 
 ---
 
+<a id="ch10"></a>
+
 ## 10. 延伸阅读
+
+<sub>[↑ 回到目录](#toc) ｜ [← 上一章：9. 术语表](#ch9)</sub>
 
 按"读懂这篇论文"的优先级：
 
@@ -1811,3 +2018,7 @@ Llama-3.1-8B，temperature 0.6，n=100 × 3 seeds：
 ---
 
 *本文档依据 arXiv v2 源码（`paper/iclr2027/arxiv_v2/source/`）编写。标【我的解释】的部分是辅助理解的背景，不是论文原文；如与论文冲突，以论文为准。*
+
+---
+
+<sub>[↑ 回到目录](#toc)</sub>
